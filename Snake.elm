@@ -1,13 +1,15 @@
 import Keyboard
+import Window
 
-widthSquare = 20
+widthSquare = 10
 widthCanvas = 320
 heightCanvas = 480
 gridColor = rgba 0 0 0 0.7
 canvasBackgroundColor = rgba 0 0 255 0.1
 snakeColor = rgba 100 0 0 0.5
-halfMaxWidth = 8
-halfMaxHeight = 12
+halfMaxWidth = widthCanvas `div` (2 * widthSquare)
+halfMaxHeight = heightCanvas `div` (2 * widthSquare)
+
 
 data SnakeDirection = Up|Down|Right|Left|None
 
@@ -26,12 +28,12 @@ data Event = GameTick (Float) | KeyboardInput {x : Int, y : Int}
 
 boundsX : Int -> Int
 boundsX x =  if | x < -halfMaxWidth -> halfMaxWidth - 1
-                | x >= halfMaxWidth  -> -halfMaxWidth
+                | x >= halfMaxWidth -> -halfMaxWidth
                 | otherwise         -> x
 
 boundsY : Int -> Int
 boundsY y =  if | y < -halfMaxHeight -> halfMaxHeight - 1
-                | y >= halfMaxHeight  -> -halfMaxHeight
+                | y >= halfMaxHeight -> -halfMaxHeight
                 | otherwise          -> y
 
 
@@ -60,6 +62,7 @@ getDirection input = if  | input.x == -1 -> Left
                          | input.y ==  1  -> Down
                          | input.y == -1 -> Up
                          | otherwise     -> None
+
 changeDirection snake input = { snake | direction <- let newdirection = getDirection input
                                                     in if | newdirection == None -> snake.direction
                                                           | otherwise            -> newdirection }
@@ -98,9 +101,9 @@ drawSnakeSegment (x,y) = square  widthSquare |> filled snakeColor |>
                             move ((toFloat x) * widthSquare + (widthSquare/2),
                                   (toFloat y) * widthSquare + (widthSquare/2))
 
-drawGame : GameState -> Element
-drawGame gameState = color canvasBackgroundColor <| collage 320 480
-                                <| drawGrid  ++ drawSnake gameState.snake
+drawGame : (Int,Int) -> GameState -> Element
+drawGame (windowWidth,windowHeight) gameState = color canvasBackgroundColor <| collage 320 480
+                                                <| drawGrid  ++ drawSnake gameState.snake
 
 delta = fps 6
 inputdelta = Keyboard.arrows
@@ -109,4 +112,4 @@ gameSignal = merges [lift GameTick delta,lift KeyboardInput inputdelta]
 
 gameState = foldp (stepGame) defaultGame <| gameSignal
 
-main = drawGame <~ gameState
+main = drawGame <~ Window.dimensions ~ gameState
