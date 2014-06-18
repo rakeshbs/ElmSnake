@@ -1,6 +1,6 @@
 import Keyboard
 
-widthSquare = 10
+widthSquare = 20
 widthCanvas = 320
 heightCanvas = 480
 gridColor = rgba 0 0 0 0.7
@@ -9,7 +9,7 @@ snakeColor = rgba 100 0 0 0.5
 halfMaxWidth = 8
 halfMaxHeight = 12
 
-data SnakeDirection = Up|Down|Right|Left
+data SnakeDirection = Up|Down|Right|Left|None
 
 type Vec = (Int,Int)
 
@@ -57,10 +57,12 @@ moveSnake snake = let h = head snake.segments
 
 getDirection input = if  | input.x == -1 -> Left
                          | input.x ==  1 -> Right
-                         | input.y == -1 -> Down
-                         | input.y ==  1 -> Up
-
-changeDirection snake input = {snake | direction <- getDirection input}
+                         | input.y ==  1  -> Down
+                         | input.y == -1 -> Up
+                         | otherwise     -> None
+changeDirection snake input = { snake | direction <- let newdirection = getDirection input
+                                                    in if | newdirection == None -> snake.direction
+                                                          | otherwise            -> newdirection }
 
 stepGame : Event -> GameState -> GameState
 stepGame event g = case event of
@@ -100,7 +102,7 @@ drawGame : GameState -> Element
 drawGame gameState = color canvasBackgroundColor <| collage 320 480
                                 <| drawGrid  ++ drawSnake gameState.snake
 
-delta = fps 1
+delta = fps 6
 inputdelta = Keyboard.arrows
 
 gameSignal = merges [lift GameTick delta,lift KeyboardInput inputdelta]
