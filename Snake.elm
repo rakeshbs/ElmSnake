@@ -19,17 +19,28 @@ defaultGame = { snake = defaultSnake }
 
 defaultSnake = { segments = [(4,4),(4,5),(4,6)], direction = Up }
 
+type UserInput = {}
+
+userInput : Signal UserInput
+userInput = constant {}
+
+type Input = { timeDelta:Float, userInput:UserInput }
+
 {----------------------------------------------------------
 Draw the grid
 -----------------------------------------------------------}
 
-drawVerticalLineAtIndex index =  traced (solid gridColor) <|  segment (index * widthSquare,-1000) (index * widthSquare,1000)
+drawVerticalLineAtIndex index =  traced (solid gridColor) <|
+                                 segment (index * widthSquare,-1000) (index * widthSquare,1000)
 
-drawHorizontalLineAtIndex index =  traced (solid gridColor) <|  segment (-1000,index * widthSquare) (1000,index * widthSquare)
+drawHorizontalLineAtIndex index =  traced (solid gridColor) <|
+                                    segment (-1000,index * widthSquare) (1000,index * widthSquare)
 
 
-drawGrid = let verticalLines = map (drawVerticalLineAtIndex) [(-widthCanvas/(2 * widthSquare))..(widthCanvas/(2 * widthSquare))]
-               horizontalLines =  map (drawHorizontalLineAtIndex) [(-heightCanvas/(2 * widthSquare))..(heightCanvas/(2 * widthSquare))]
+drawGrid = let widthRatio = (widthCanvas / (2 * widthSquare))
+               heightRatio = (heightCanvas / (2 * widthSquare))
+               verticalLines = map (drawVerticalLineAtIndex) [(-widthRatio)..(widthRatio)]
+               horizontalLines =  map (drawHorizontalLineAtIndex) [(-heightRatio)..(heightRatio)]
            in verticalLines ++ horizontalLines
 
 {----------------------------------------------------------
@@ -39,10 +50,20 @@ drawSnake : Snake -> [Form]
 drawSnake snake = map (drawSnakeSegment) <| snake.segments
 
 drawSnakeSegment : Vec -> Form
-drawSnakeSegment (x,y) = square  widthSquare |> filled snakeColor |> move ((toFloat x) * widthSquare + (widthSquare/2),(toFloat y) * widthSquare + (widthSquare/2))
+drawSnakeSegment (x,y) = square  widthSquare |> filled snakeColor |>
+                            move ((toFloat x) * widthSquare + (widthSquare/2),
+                                  (toFloat y) * widthSquare + (widthSquare/2))
 
 drawGame : GameState -> Element
-drawGame gameState = color canvasBackgroundColor <| collage 320 480 <|  drawGrid  ++ drawSnake gameState.snake
+drawGame gameState = color canvasBackgroundColor <| collage 320 480
+                                <| drawGrid  ++ drawSnake gameState.snake
+
+delta = fps 30
+input = sampleOn delta (lift2 Input delta userInput)
+interval = every second
+
+gameState = foldp stepGame defaultGame input
 
 
-main = drawGame defaultGame
+
+main = drawGame <~ gameState
