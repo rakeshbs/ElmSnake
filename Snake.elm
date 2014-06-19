@@ -9,7 +9,8 @@ canvasBackgroundColor = rgba 0 0 255 0.1
 snakeColor = rgba 100 0 0 0.5
 halfMaxWidth = widthCanvas `div` (2 * widthSquare)
 halfMaxHeight = heightCanvas `div` (2 * widthSquare)
-
+verticalNumberOfRows = 48
+horizontalNumberOfRows = 32
 
 data SnakeDirection = Up|Down|Right|Left|None
 
@@ -77,18 +78,17 @@ stepGame event g = case event of
 Draw the grid
 -----------------------------------------------------------}
 
-drawVerticalLineAtIndex index =  traced (solid gridColor) <|
-                                 segment (index * widthSquare,-1000) (index * widthSquare,1000)
+drawVerticalLineAtIndex squareSide index =  traced (solid gridColor) <|
+                                            segment (index * squareSide,-1000) (index * squareSide,1000)
 
-drawHorizontalLineAtIndex index =  traced (solid gridColor) <|
-                                    segment (-1000,index * widthSquare) (1000,index * widthSquare)
+drawHorizontalLineAtIndex squareSide index =  traced (solid gridColor) <|
+                                              segment (-1000,index * squareSide) (1000,index * squareSide)
 
-
-drawGrid = let widthRatio = (widthCanvas / (2 * widthSquare))
-               heightRatio = (heightCanvas / (2 * widthSquare))
-               verticalLines = map (drawVerticalLineAtIndex) [(-widthRatio)..(widthRatio)]
-               horizontalLines =  map (drawHorizontalLineAtIndex) [(-heightRatio)..(heightRatio)]
-           in verticalLines ++ horizontalLines
+drawGrid (canvasWidth,canvasHeight) squareSide  = let widthRatio = squareSide
+                                                      heightRatio = squareSide
+                                                      verticalLines = map (drawVerticalLineAtIndex squareSide) [(-widthRatio)..(widthRatio)]
+                                                      horizontalLines =  map (drawHorizontalLineAtIndex squareSide) [(-heightRatio)..(heightRatio)]
+                                                  in verticalLines ++ horizontalLines
 
 {----------------------------------------------------------
 Draw the Snake
@@ -102,8 +102,15 @@ drawSnakeSegment (x,y) = square  widthSquare |> filled snakeColor |>
                                   (toFloat y) * widthSquare + (widthSquare/2))
 
 drawGame : (Int,Int) -> GameState -> Element
-drawGame (windowWidth,windowHeight) gameState = color canvasBackgroundColor <| collage 320 480
-                                                <| drawGrid  ++ drawSnake gameState.snake
+drawGame (windowWidth,windowHeight) gameState = let squareSide = getSquareSide (windowWidth,windowHeight)
+                                                    (canvasWidth,canvasHeight) = getCanvasSize (windowWidth,windowHeight)
+                                                in color canvasBackgroundColor <| collage canvasWidth canvasHeight
+                                                   <| (drawGrid (canvasWidth,canvasHeight) squareSide) ++ drawSnake gameState.snake
+
+getSquareSide (width,height) = 10--height `div` verticalNumberOfRows
+
+getCanvasSize (width,height) = let side = height `div` verticalNumberOfRows
+                               in (side * horizontalNumberOfRows,height)
 
 delta = fps 6
 inputdelta = Keyboard.arrows
