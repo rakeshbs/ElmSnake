@@ -7,10 +7,10 @@ heightCanvas = 480
 gridColor = rgba 0 0 0 0.7
 canvasBackgroundColor = rgba 0 0 255 0.1
 snakeColor = rgba 100 0 0 0.5
-halfMaxWidth = widthCanvas `div` (2 * widthSquare)
-halfMaxHeight = heightCanvas `div` (2 * widthSquare)
-verticalNumberOfRows = 48
-horizontalNumberOfRows = 32
+verticalNumberOfCells = 24
+horizontalNumberOfCells = 16
+halfVerticalCells = verticalNumberOfCells `div` 2
+halfHorizontalCells = horizontalNumberOfCells `div` 2
 
 data SnakeDirection = Up|Down|Right|Left|None
 
@@ -28,13 +28,13 @@ data Event = GameTick (Float) | KeyboardInput {x : Int, y : Int}
 
 
 boundsX : Int -> Int
-boundsX x =  if | x < -halfMaxWidth -> halfMaxWidth - 1
-                | x >= halfMaxWidth -> -halfMaxWidth
+boundsX x =  if | x < -halfHorizontalCells -> halfHorizontalCells - 1
+                | x >= halfHorizontalCells -> -halfHorizontalCells
                 | otherwise         -> x
 
 boundsY : Int -> Int
-boundsY y =  if | y < -halfMaxHeight -> halfMaxHeight - 1
-                | y >= halfMaxHeight -> -halfMaxHeight
+boundsY y =  if | y < -halfVerticalCells -> halfVerticalCells - 1
+                | y >= halfVerticalCells -> -halfVerticalCells
                 | otherwise          -> y
 
 
@@ -84,33 +84,36 @@ drawVerticalLineAtIndex squareSide index =  traced (solid gridColor) <|
 drawHorizontalLineAtIndex squareSide index =  traced (solid gridColor) <|
                                               segment (-1000,index * squareSide) (1000,index * squareSide)
 
-drawGrid (canvasWidth,canvasHeight) squareSide  = let widthRatio = squareSide
-                                                      heightRatio = squareSide
+drawGrid (canvasWidth,canvasHeight) squareSide  = let widthRatio = toFloat (canvasWidth)/(2 * squareSide)
+                                                      heightRatio = toFloat(canvasHeight)/(2 * squareSide)
                                                       verticalLines = map (drawVerticalLineAtIndex squareSide) [(-widthRatio)..(widthRatio)]
                                                       horizontalLines =  map (drawHorizontalLineAtIndex squareSide) [(-heightRatio)..(heightRatio)]
-                                                  in verticalLines ++ horizontalLines
+                                                   in verticalLines ++ horizontalLines
 
 {----------------------------------------------------------
 Draw the Snake
 -----------------------------------------------------------}
-drawSnake : Snake -> [Form]
-drawSnake snake = map (drawSnakeSegment) <| snake.segments
+drawSnake : Snake -> Float -> [Form]
+drawSnake snake squareSide = map (drawSnakeSegment squareSide) <| snake.segments
 
-drawSnakeSegment : Vec -> Form
-drawSnakeSegment (x,y) = square  widthSquare |> filled snakeColor |>
-                            move ((toFloat x) * widthSquare + (widthSquare/2),
-                                  (toFloat y) * widthSquare + (widthSquare/2))
+drawSnakeSegment : Float -> Vec -> Form
+drawSnakeSegment squareSide (x,y) = square  squareSide |> filled snakeColor |>
+                                    move ((toFloat x) * squareSide + (squareSide/2),
+                                    (toFloat y) * squareSide + (squareSide/2))
 
 drawGame : (Int,Int) -> GameState -> Element
 drawGame (windowWidth,windowHeight) gameState = let squareSide = getSquareSide (windowWidth,windowHeight)
                                                     (canvasWidth,canvasHeight) = getCanvasSize (windowWidth,windowHeight)
                                                 in color canvasBackgroundColor <| collage canvasWidth canvasHeight
-                                                   <| (drawGrid (canvasWidth,canvasHeight) squareSide) ++ drawSnake gameState.snake
+                                                   <| (drawGrid (canvasWidth,canvasHeight) squareSide) ++
+                                                                  drawSnake gameState.snake squareSide
 
-getSquareSide (width,height) = 10--height `div` verticalNumberOfRows
 
-getCanvasSize (width,height) = let side = height `div` verticalNumberOfRows
-                               in (side * horizontalNumberOfRows,height)
+getSquareSide : (Int,Int) -> Float
+getSquareSide (width,height) = toFloat(height `div` verticalNumberOfCells)
+
+getCanvasSize (width,height) = let side = height `div` verticalNumberOfCells
+                               in (side * horizontalNumberOfCells,side * verticalNumberOfCells)
 
 delta = fps 6
 inputdelta = Keyboard.arrows
