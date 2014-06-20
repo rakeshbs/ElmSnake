@@ -1,5 +1,6 @@
 import Keyboard
 import Window
+import Touch
 
 widthSquare = 10
 widthCanvas = 320
@@ -118,8 +119,15 @@ getCanvasSize (width,height) = let side = height `div` verticalNumberOfCells
 delta = fps 6
 inputdelta = Keyboard.arrows
 
+getTouches = Touch.touches
+
 gameSignal = merges [lift GameTick delta,lift KeyboardInput inputdelta]
 
-gameState = foldp (stepGame) defaultGame <| gameSignal
+currentGameState = foldp (stepGame) defaultGame <| gameSignal
 
-main = drawGame <~ Window.dimensions ~ gameState
+getSingleTouch touches = if | length touches > 0 -> Just (head touches)
+                            | otherwise -> Nothing
+
+main = drawGame <~ Window.dimensions ~ currentGameState
+
+
